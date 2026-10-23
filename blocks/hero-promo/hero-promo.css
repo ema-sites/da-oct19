@@ -1,0 +1,46 @@
+.hero-promo-container .hero-promo-wrapper {
+  max-width: unset;
+  padding: 0;
+}
+
+.hero-promo {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 400px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.hero-promo .hero-promo-background {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.hero-promo .hero-promo-background picture,
+.hero-promo .hero-promo-background img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-promo .hero-promo-content {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 120px 24px 40px;
+}
+
+@media (width >= 900px) {
+  .hero-promo .hero-promo-content {
+    padding: 200px 32px 50px;
+  }
+
+  .hero-promo .hero-promo-content > * {
+    max-width: 50%;
+  }
+}

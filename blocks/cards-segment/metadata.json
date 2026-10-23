@@ -1,0 +1,29 @@
+{
+  "variantName": "cards-segment",
+  "baseBlock": "cards",
+  "canonicalModel": "standalone",
+  "visualCharacteristics": {
+    "purpose": "4-up edge-to-edge tall portrait image tiles, each tile fully linked, with an uppercase label at the bottom",
+    "layout": "4 columns on desktop, 2 on mobile; image covers tile, label overlaid at bottom",
+    "source": "https://bradescobank.com/en/ section rc6 (Private Bank, Personal Bank, US Residents, Business)"
+  },
+  "contentPattern": {
+    "structure": "one row per tile: image cell | label cell containing a link (the link target becomes the whole-tile link)",
+    "columns": 2,
+    "rows": [
+      {
+        "row": "1..n (one per tile)",
+        "cells": [
+          "Tile image",
+          "Linked label"
+        ]
+      }
+    ]
+  },
+  "options": [],
+  "memberVariantIds": [
+    "cards-segment"
+  ],
+  "usage": "Use for audience/segment navigation tiles.",
+  "reuseGuidance": "Reuse for image-only navigation tiles with a single label; use cards-product when cards carry eyebrow, description and CTA."
+}

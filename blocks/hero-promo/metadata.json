@@ -1,0 +1,34 @@
+{
+  "variantName": "hero-promo",
+  "baseBlock": "hero",
+  "canonicalModel": "standalone",
+  "visualCharacteristics": {
+    "purpose": "promo banner with a full-width background photo and bottom-left heading, description and pill CTA",
+    "layout": "content anchored bottom-left over a cover-fit background image",
+    "source": "https://bradescobank.com/en/ section rc13 (Exclusive Content for You)"
+  },
+  "contentPattern": {
+    "structure": "row 1: background image; row 2: heading (H3), description paragraph, CTA link",
+    "columns": 1,
+    "rows": [
+      {
+        "row": 1,
+        "cells": [
+          "Background image"
+        ]
+      },
+      {
+        "row": 2,
+        "cells": [
+          "Heading, description, CTA link"
+        ]
+      }
+    ]
+  },
+  "options": [],
+  "memberVariantIds": [
+    "hero-promo"
+  ],
+  "usage": "Use for promotional banners that combine a background photo with a call to action.",
+  "reuseGuidance": "Reuse for photo-background promo banners; use hero-video for video backgrounds."
+}

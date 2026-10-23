@@ -1,89 +1,109 @@
-import { getMetadata } from '../../scripts/aem.js';
-import { loadFragment } from '../fragment/fragment.js';
+// media query match that indicates desktop width
+const isDesktop = window.matchMedia('(width >= 900px)');
 
-// media query match that indicates mobile/tablet width
-const isDesktop = window.matchMedia('(min-width: 900px)');
+// section order in the nav fragment
+const SECTION_CLASSES = ['topbar', 'brand', 'sections', 'tools'];
 
 /**
- * Closes the open nav dropdown (desktop) or the nav menu (mobile) on Escape
- * @param {KeyboardEvent} e keydown event
+ * Fetches the nav fragment: /content first (local preview), then the site root (DA/EDS).
+ * @returns {Promise<Element|null>} wrapper holding the fragment sections
  */
-function closeOnEscape(e) {
-  if (e.code === 'Escape') {
-    const nav = document.getElementById('nav');
-    const navSections = nav.querySelector('.nav-sections');
-    if (!navSections) return;
-    const navSectionExpanded = navSections.querySelector('[aria-expanded="true"]');
-    if (navSectionExpanded && isDesktop.matches) {
-      // eslint-disable-next-line no-use-before-define
-      toggleAllNavSections(navSections);
-      navSectionExpanded.focus();
-    } else if (!isDesktop.matches) {
-      // eslint-disable-next-line no-use-before-define
-      toggleMenu(nav, navSections);
-      nav.querySelector('button').focus();
-    }
-  }
+async function fetchNav() {
+  let resp = await fetch('/content/nav.plain.html');
+  if (!resp.ok) resp = await fetch('/nav.plain.html');
+  if (!resp.ok) return null;
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = await resp.text();
+  // resolve relative image paths against the fragment location, not the page
+  wrapper.querySelectorAll('img[src]').forEach((img) => {
+    img.src = new URL(img.getAttribute('src'), resp.url).href;
+  });
+  return wrapper;
 }
 
 /**
- * Closes the open nav dropdown (desktop) or the nav menu (mobile) when focus leaves the nav
- * @param {FocusEvent} e focusout event
+ * Closes every open dropdown inside the nav
+ * @param {Element} nav the nav element
+ * @param {Element} [except] dropdown to leave untouched
  */
-function closeOnFocusLost(e) {
-  const nav = e.currentTarget;
-  if (!nav.contains(e.relatedTarget)) {
-    const navSections = nav.querySelector('.nav-sections');
-    if (!navSections) return;
-    const navSectionExpanded = navSections.querySelector('[aria-expanded="true"]');
-    if (navSectionExpanded && isDesktop.matches) {
-      // eslint-disable-next-line no-use-before-define
-      toggleAllNavSections(navSections, false);
-    } else if (!isDesktop.matches) {
-      // eslint-disable-next-line no-use-before-define
-      toggleMenu(nav, navSections, false);
-    }
-  }
-}
-
-/**
- * Toggles all nav sections
- * @param {Element} sections The container element
- * @param {Boolean|string} expanded Whether the element should be expanded or collapsed
- */
-function toggleAllNavSections(sections, expanded = false) {
-  if (!sections) return;
-  sections.querySelectorAll('.nav-drop > button').forEach((button) => {
-    button.setAttribute('aria-expanded', expanded);
+function closeDropdowns(nav, except) {
+  nav.querySelectorAll('.nav-drop').forEach((drop) => {
+    if (drop === except) return;
+    drop.classList.remove('is-open');
+    drop.querySelector(':scope > button').setAttribute('aria-expanded', 'false');
+    drop.querySelector(':scope > .nav-drop-panel').inert = true;
   });
 }
 
 /**
- * Toggles the entire nav
- * @param {Element} nav The container element
- * @param {Element} navSections The nav sections within the container element
- * @param {*} forceExpanded Optional param to force nav expand behavior when not null
+ * Opens or closes the mobile menu
+ * @param {Element} nav the nav element
+ * @param {boolean} [force] expanded state to force
  */
-function toggleMenu(nav, navSections, forceExpanded = null) {
-  const expanded = forceExpanded !== null ? !forceExpanded : nav.getAttribute('aria-expanded') === 'true';
+function toggleMenu(nav, force) {
+  const expanded = force !== undefined ? force : nav.getAttribute('aria-expanded') !== 'true';
   const button = nav.querySelector('.nav-hamburger button');
-  document.body.style.overflowY = (expanded || isDesktop.matches) ? '' : 'hidden';
-  // the desktop nav is always expanded, so aria-expanded only applies to the mobile menu
-  if (isDesktop.matches) nav.removeAttribute('aria-expanded');
-  else nav.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-  toggleAllNavSections(navSections, expanded || isDesktop.matches ? 'false' : 'true');
-  button.setAttribute('aria-label', expanded ? 'Open navigation' : 'Close navigation');
+  nav.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  button.setAttribute('aria-label', expanded ? 'Close navigation' : 'Open navigation');
+  document.body.style.overflowY = expanded && !isDesktop.matches ? 'hidden' : '';
+  if (!expanded) closeDropdowns(nav);
+}
 
-  // enable menu collapse on escape keypress
-  if (!expanded || isDesktop.matches) {
-    // collapse menu on escape press
-    window.addEventListener('keydown', closeOnEscape);
-    // collapse menu on focus lost
-    nav.addEventListener('focusout', closeOnFocusLost);
-  } else {
-    window.removeEventListener('keydown', closeOnEscape);
-    nav.removeEventListener('focusout', closeOnFocusLost);
-  }
+/**
+ * Turns every list item that holds a nested list into a click-toggled dropdown
+ * @param {Element} nav the nav element
+ * @param {Element} container section holding the lists
+ */
+function decorateDropdowns(nav, container) {
+  container.querySelectorAll(':scope > ul').forEach((ul) => ul.classList.add('nav-list'));
+  container.querySelectorAll(':scope > ul > li').forEach((li) => {
+    const subList = li.querySelector(':scope > ul');
+    if (!subList) {
+      li.querySelector(':scope > a')?.classList.add('nav-trigger');
+      return;
+    }
+    li.classList.add('nav-drop');
+    subList.classList.add('nav-drop-panel');
+    subList.inert = true;
+    const button = document.createElement('button');
+    button.className = 'nav-trigger';
+    button.type = 'button';
+    button.setAttribute('aria-expanded', 'false');
+    const label = document.createElement('span');
+    label.textContent = li.querySelector(':scope > p')?.textContent.trim()
+      || [...li.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.textContent).join('').trim();
+    const chevron = document.createElement('span');
+    chevron.className = 'nav-chevron';
+    chevron.setAttribute('aria-hidden', 'true');
+    button.append(label, chevron);
+    [...li.childNodes].forEach((node) => { if (node !== subList) node.remove(); });
+    li.prepend(button);
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = !li.classList.contains('is-open');
+      closeDropdowns(nav, li);
+      li.classList.toggle('is-open', open);
+      button.setAttribute('aria-expanded', open ? 'true' : 'false');
+      subList.inert = !open;
+    });
+  });
+}
+
+/**
+ * Classifies the tool lists: dropdown CTA lists and image-only (locale) lists
+ * @param {Element} tools the tools section
+ */
+function decorateTools(tools) {
+  tools.querySelectorAll(':scope > ul').forEach((ul) => {
+    const items = [...ul.children];
+    if (ul.querySelector('.nav-drop')) {
+      ul.classList.add('nav-cta');
+    } else if (items.length && items.every((li) => li.querySelector('img') && !li.textContent.trim())) {
+      ul.classList.add('nav-locale');
+      // the entry without a link is the current locale
+      items.forEach((li) => { if (!li.querySelector('a')) li.classList.add('is-current'); });
+    }
+  });
 }
 
 /**
@@ -91,70 +111,102 @@ function toggleMenu(nav, navSections, forceExpanded = null) {
  * @param {Element} block The header block element
  */
 export default async function decorate(block) {
-  // load nav as fragment
-  const navMeta = getMetadata('nav');
-  const navPath = navMeta ? new URL(navMeta, window.location).pathname : '/nav';
-  const fragment = await loadFragment(navPath);
+  const fragment = await fetchNav();
+  if (!fragment) return;
 
-  // decorate nav DOM
   block.textContent = '';
+  const navWrapper = document.createElement('div');
+  navWrapper.className = 'nav-wrapper';
+
+  const sections = [...fragment.children];
   const nav = document.createElement('nav');
   nav.id = 'nav';
-  while (fragment.firstElementChild) nav.append(fragment.firstElementChild);
+  nav.setAttribute('aria-label', 'Main navigation');
 
-  const classes = ['brand', 'sections', 'tools'];
-  classes.forEach((c, i) => {
-    const section = nav.children[i];
-    if (section) section.classList.add(`nav-${c}`);
+  sections.forEach((section, i) => {
+    const name = SECTION_CLASSES[i];
+    if (!name) return;
+    section.classList.add(`nav-${name}`);
+    if (name === 'topbar') {
+      const inner = document.createElement('div');
+      inner.className = 'nav-topbar-inner';
+      inner.append(...section.childNodes);
+      section.append(inner);
+      navWrapper.append(section);
+    } else {
+      nav.append(section);
+    }
   });
 
-  const navBrand = nav.querySelector('.nav-brand');
-  const brandLink = navBrand.querySelector('.button');
-  if (brandLink) {
-    brandLink.className = '';
-    brandLink.closest('.button-container').className = '';
+  // brand: first logo is the default (over hero), a second logo is the solid-state variant
+  const brand = nav.querySelector('.nav-brand');
+  if (brand) {
+    const logos = brand.querySelectorAll(':scope > p');
+    logos[0]?.classList.add('nav-logo-default');
+    logos[1]?.classList.add('nav-logo-solid');
   }
 
   const navSections = nav.querySelector('.nav-sections');
-  if (navSections) {
-    navSections.querySelectorAll(':scope .default-content-wrapper > ul > li').forEach((navSection) => {
-      const subList = navSection.querySelector(':scope > ul');
-      if (!subList) return;
-      navSection.classList.add('nav-drop');
-      // wrap the dropdown label in a button so it is announced as expandable
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.setAttribute('aria-expanded', false);
-      [...navSection.childNodes].forEach((node) => {
-        if (node !== subList) button.append(node);
-      });
-      navSection.prepend(button);
-      button.addEventListener('click', () => {
-        const expanded = button.getAttribute('aria-expanded') === 'true';
-        if (isDesktop.matches) {
-          button.focus();
-          toggleAllNavSections(navSections);
-        }
-        button.setAttribute('aria-expanded', !expanded);
-      });
-    });
-  }
+  const navTools = nav.querySelector('.nav-tools');
+  [navSections, navTools].forEach((s) => { if (s) decorateDropdowns(nav, s); });
+  if (navTools) decorateTools(navTools);
+
+  // sections and tools form one menu: right-aligned group on desktop, drawer on mobile
+  const navMenu = document.createElement('div');
+  navMenu.className = 'nav-menu';
+  navMenu.append(...[navSections, navTools].filter(Boolean));
+  nav.append(navMenu);
+
+  // links leaving the site open in a new tab, like the source
+  nav.querySelectorAll('a[href^="http"]').forEach((a) => {
+    if (new URL(a.href).host !== window.location.host && a.closest('.nav-drop-panel')) {
+      a.target = '_blank';
+      a.rel = 'noopener';
+    }
+  });
 
   // hamburger for mobile
   const hamburger = document.createElement('div');
-  hamburger.classList.add('nav-hamburger');
+  hamburger.className = 'nav-hamburger';
   hamburger.innerHTML = `<button type="button" aria-controls="nav" aria-label="Open navigation">
       <span class="nav-hamburger-icon"></span>
     </button>`;
-  hamburger.addEventListener('click', () => toggleMenu(nav, navSections));
-  nav.prepend(hamburger);
+  hamburger.querySelector('button').addEventListener('click', () => toggleMenu(nav));
+  nav.append(hamburger);
   nav.setAttribute('aria-expanded', 'false');
-  // prevent mobile nav behavior on window resize
-  toggleMenu(nav, navSections, isDesktop.matches);
-  isDesktop.addEventListener('change', () => toggleMenu(nav, navSections, isDesktop.matches));
 
-  const navWrapper = document.createElement('div');
-  navWrapper.className = 'nav-wrapper';
-  navWrapper.append(nav);
+  const navBar = document.createElement('div');
+  navBar.className = 'nav-bar';
+  navBar.append(nav);
+  navWrapper.append(navBar);
   block.append(navWrapper);
+
+  // transparent header only when a hero sits directly behind it
+  const firstSection = document.querySelector('main > .section');
+  if (firstSection?.querySelector('[class*="hero"]')) navWrapper.classList.add('is-transparent');
+
+  // close dropdowns on outside click and Escape
+  document.addEventListener('click', (e) => { if (!nav.contains(e.target)) closeDropdowns(nav); });
+  window.addEventListener('keydown', (e) => {
+    if (e.code !== 'Escape') return;
+    const open = nav.querySelector('.nav-drop.is-open > button');
+    closeDropdowns(nav);
+    if (open) open.focus();
+    else if (!isDesktop.matches && nav.getAttribute('aria-expanded') === 'true') toggleMenu(nav, false);
+  });
+
+  // solid sticky bar once the top bar has scrolled away
+  const onScroll = () => {
+    const topbar = navWrapper.querySelector('.nav-topbar');
+    const threshold = topbar && isDesktop.matches ? topbar.offsetHeight : 0;
+    navWrapper.classList.toggle('is-sticky', window.scrollY > threshold);
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // reset menu state when crossing the desktop breakpoint
+  isDesktop.addEventListener('change', () => {
+    toggleMenu(nav, false);
+    onScroll();
+  });
 }

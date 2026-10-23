@@ -1,0 +1,29 @@
+{
+  "variantName": "cards-product",
+  "baseBlock": "cards",
+  "canonicalModel": "standalone",
+  "visualCharacteristics": {
+    "purpose": "2-up full-bleed photo cards with overlay text: eyebrow, heading (or logo image), description, pill CTA and optional footnote",
+    "layout": "2 columns on desktop, stacked on mobile; text anchored bottom-left over cover-fit image",
+    "source": "https://bradescobank.com/en/ sections rc10 and rc11 (Investments, Real Estate, Credit Cards, Zelle)"
+  },
+  "contentPattern": {
+    "structure": "one row per card: background image cell | text cell with optional eyebrow paragraph, heading (or logo image), description, CTA link, optional footnote paragraph after the CTA",
+    "columns": 2,
+    "rows": [
+      {
+        "row": "1..n (one per card)",
+        "cells": [
+          "Background image",
+          "Eyebrow, heading or logo image, description, CTA link, optional footnote"
+        ]
+      }
+    ]
+  },
+  "options": [],
+  "memberVariantIds": [
+    "cards-product"
+  ],
+  "usage": "Use for product promotion cards with a background photo and a call to action.",
+  "reuseGuidance": "Reuse for photo product cards; place multiple rows in one block rather than one block per pair."
+}

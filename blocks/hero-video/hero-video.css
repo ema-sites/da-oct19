@@ -1,0 +1,65 @@
+.hero-video-container .hero-video-wrapper {
+  max-width: unset;
+  padding: 0;
+}
+
+.hero-video {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 400px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.hero-video .hero-video-background {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  container-type: size;
+}
+
+.hero-video .hero-video-background picture,
+.hero-video .hero-video-background img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Cover the box with a 16:9 embed regardless of aspect ratio */
+.hero-video .hero-video-media {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100cqw, 177.78cqh);
+  height: max(100cqh, 56.25cqw);
+  transform: translate(-50%, -50%);
+  border: 0;
+  pointer-events: none;
+}
+
+.hero-video video.hero-video-media {
+  object-fit: cover;
+}
+
+.hero-video .hero-video-content {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+@media (width >= 900px) {
+  .hero-video {
+    min-height: 600px;
+  }
+
+  .hero-video .hero-video-content {
+    padding: 40px 32px;
+  }
+}

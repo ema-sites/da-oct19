@@ -1,0 +1,34 @@
+{
+  "variantName": "hero-video",
+  "baseBlock": "hero",
+  "canonicalModel": "standalone",
+  "visualCharacteristics": {
+    "purpose": "full-bleed band with a looping, muted background video (Vimeo/YouTube/mp4 link) and overlaid white text, no CTA",
+    "layout": "text overlaid on a cover-fit background video; optional poster image shown behind the video and used instead of it under prefers-reduced-motion",
+    "source": "https://bradescobank.com/en/ sections rc3 (H1 over Vimeo 963210681) and rc8 (statement paragraph over Vimeo 963210796)"
+  },
+  "contentPattern": {
+    "structure": "row 1: background cell holding a video link (e.g. https://vimeo.com/963210681) and/or a poster image; row 2: content cell with a heading or statement paragraph, optional description and optional CTA link",
+    "columns": 1,
+    "rows": [
+      {
+        "row": 1,
+        "cells": [
+          "Background: video link (Vimeo, YouTube or .mp4) and/or optional poster image"
+        ]
+      },
+      {
+        "row": 2,
+        "cells": [
+          "Heading (H1) or statement paragraph, optional description, optional CTA"
+        ]
+      }
+    ]
+  },
+  "options": [],
+  "memberVariantIds": [
+    "hero-video"
+  ],
+  "usage": "Use for full-width page-opening or interstitial bands whose background is a looping video.",
+  "reuseGuidance": "Reuse for any background-video banner; use hero-promo when the background is a still photo with a CTA."
+}
