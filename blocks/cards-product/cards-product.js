@@ -53,6 +53,16 @@ export default function decorate(block) {
       }
     });
 
+    // Group the text that precedes the CTA/footnote so it can share a min-height.
+    const firstAction = children.find((el) => el.matches('.cards-product-cta, .cards-product-footnote'));
+    const textParts = firstAction ? children.slice(0, children.indexOf(firstAction)) : children;
+    if (textParts.length) {
+      const text = document.createElement('div');
+      text.className = 'cards-product-card-text';
+      text.append(...textParts);
+      body.prepend(text);
+    }
+
     if (!hasImage && !body.children.length) return;
     if (!hasImage) li.classList.add('no-image');
     li.append(body);

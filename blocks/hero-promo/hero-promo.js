@@ -29,7 +29,15 @@ export default function decorate(block) {
     }
   });
 
-  content.querySelectorAll('a.button').forEach((a) => a.classList.add('hero-promo-cta'));
+  // a paragraph holding a single link (plain or auto-decorated button) is the CTA
+  content.querySelectorAll('p').forEach((p) => {
+    const links = p.querySelectorAll('a[href]');
+    if (links.length !== 1) return;
+    const [link] = links;
+    if (link.querySelector('img') || p.textContent.trim() !== link.textContent.trim()) return;
+    p.classList.add('hero-promo-cta-wrapper');
+    link.classList.add('hero-promo-cta');
+  });
 
   block.replaceChildren();
   if (background.children.length) block.append(background);
